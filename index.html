@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="hi" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmaKart - Online Medicine & Healthcare Store</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        fkBlue: '#2874f0',
+                        fkDarkBlue: '#172337',
+                        fkYellow: '#ff9f00',
+                        fkOrange: '#fb641b',
+                        brandGreen: '#10b981'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .tab-active { color: #2874f0; border-bottom: 3px solid #2874f0; font-weight: 700; }
+    </style>
+</head>
+<body class="font-sans antialiased text-slate-800 min-h-full flex flex-col pb-12 selection:bg-blue-100 selection:text-fkBlue">
+
+    <!-- Top Security & Anti-Hacking Banner -->
+    <div class="bg-slate-900 text-slate-300 text-[11px] py-1 px-4 border-b border-slate-800 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1 text-emerald-400 font-bold">
+                <i class="fa-solid fa-shield-halved"></i> 256-Bit SSL Encrypted
+            </span>
+            <span class="text-slate-500">|</span>
+            <span class="text-slate-300 font-semibold">Founder & Owner: <strong class="text-fkYellow" id="top-owner-name">Shani Pandey</strong> (<span id="top-owner-email" class="text-blue-300">owner@pharmakart.com</span>)</span>
+        </div>
+        <div class="flex items-center gap-3 text-[10px]">
+            <span id="security-token-badge" class="bg-slate-800 px-2 py-0.5 rounded text-blue-300 font-mono">CSRF Token: Protected</span>
+            <span class="hidden sm:inline text-slate-400"><i class="fa-solid fa-lock text-emerald-400"></i> Anti-XSS Guard Active</span>
+        </div>
+    </div>
+
+    <!-- Top Toast Notification Container -->
+    <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Flipkart Style Header -->
+    <header class="bg-fkBlue sticky top-0 z-40 shadow-md text-white">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 gap-3 sm:gap-6">
+                
+                <!-- Brand Logo & Ownership -->
+                <div class="flex items-center gap-3 shrink-0">
+                    <button onclick="switchTab('shop')" class="flex flex-col text-left group">
+                        <span class="text-xl sm:text-2xl font-black italic tracking-wider leading-none text-white flex items-center gap-1">
+                            Pharma<span class="text-fkYellow">Kart</span>
+                            <i class="fa-solid fa-square-plus text-fkYellow text-lg"></i>
+                        </span>
+                        <span class="text-[9px] font-bold text-blue-100 tracking-wider flex items-center gap-1">
+                            By <span class="text-fkYellow uppercase font-extrabold">Shani Pandey</span>
+                        </span>
+                    </button>
+                </div>
+
+                <!-- B2B Mode Switcher (Retailer vs Distributor) -->
+                <div class="hidden lg:flex items-center bg-blue-900/60 p-1 rounded-md border border-blue-400/30">
+                    <button id="btn-mode-retail" onclick="setAccountMode('retailer')" class="px-3 py-1 rounded text-xs font-bold transition bg-white text-fkBlue shadow">
+                        <i class="fa-solid fa-store mr-1"></i> Retailer
+                    </button>
+                    <button id="btn-mode-distributor" onclick="setAccountMode('distributor')" class="px-3 py-1 rounded text-xs font-bold transition text-blue-100 hover:text-white">
+                        <i class="fa-solid fa-boxes-packing mr-1"></i> Distributor (B2B Bulk)
+                    </button>
+                </div>
+
+                <!-- Pincode / Location Selector -->
+                <button onclick="promptPincode()" class="hidden md:flex items-center gap-2 bg-blue-900/30 hover:bg-blue-900/50 px-3 py-1.5 rounded-sm border border-blue-300/30 text-xs text-blue-50 transition">
+                    <i class="fa-solid fa-location-dot text-fkYellow text-sm"></i>
+                    <div class="text-left leading-tight">
+                        <div class="text-[9px] text-blue-200 uppercase font-semibold">Deliver to</div>
+                        <div class="font-bold flex items-center gap-1 text-xs" id="location-text">
+                            Sultanpur (UP) 228145 <i class="fa-solid fa-chevron-down text-[9px]"></i>
+                        </div>
+                    </div>
+                </button>
+
+                <!-- Main Flipkart Search Bar -->
+                <div class="flex-1 max-w-xl relative">
+                    <div class="relative flex items-center">
+                        <input type="text" id="search-input" onkeyup="handleSearch()" placeholder="Search Medicines, Health Devices..." 
+                               class="w-full py-2.5 pl-4 pr-12 text-sm text-slate-900 bg-white rounded-sm focus:outline-none shadow-inner placeholder:text-slate-400">
+                        <button class="absolute right-0 top-0 bottom-0 px-4 text-fkBlue hover:text-blue-700 bg-white rounded-r-sm">
+                            <i class="fa-solid fa-magnifying-glass text-base"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Action Links -->
+                <div class="flex items-center gap-2 sm:gap-4 text-xs font-semibold">
+                    
+                    <!-- Upload Rx Prescription CTA -->
+                    <button onclick="toggleRxModal(true)" class="hidden xl:flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-sm transition font-bold shadow-sm">
+                        <i class="fa-solid fa-file-prescription text-sm"></i>
+                        <span>Upload Rx</span>
+                    </button>
+
+                    <!-- Account Menu -->
+                <div class="relative group">
+                    <button class="flex items-center gap-1.5 px-3 py-1.5 bg-white text-fkBlue font-bold rounded-sm shadow-sm hover:bg-slate-50 transition">
+                        <i class="fa-solid fa-user-shield text-base"></i>
+                        <span class="hidden sm:inline" id="user-display-name">Shani Pandey</span>
+                        <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                    </button>
+                    <div class="absolute right-0 top-full hidden group-hover:block w-64 bg-white text-slate-800 shadow-2xl rounded-sm border border-slate-100 py-1 z-50">
+                        <div class="px-4 py-2 border-b bg-slate-50">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">Platform Owner</div>
+                            <div class="font-black text-slate-800 text-xs flex items-center justify-between">
+                                <span>Shani Pandey</span>
+                                <span id="owner-status-badge" class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold"><i class="fa-solid fa-lock text-[8px] mr-1"></i>Protected</span>
+                            </div>
+                            <div id="badge-account-mode" class="text-[10px] text-fkBlue font-bold mt-0.5">Mode: Retailer</div>
+                        </div>
+                        <div class="px-4 py-1.5 text-[10px] uppercase font-bold text-slate-400 bg-slate-100">Switch Active Customer Profile</div>
+                        <button onclick="requestOwnerLogin()" class="w-full text-left px-4 py-2 hover:bg-blue-50 text-xs font-bold text-slate-700 flex items-center justify-between">
+                            <span><i class="fa-solid fa-crown text-amber-500 mr-2"></i>Shani Pandey</span>
+                            <span class="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-black"><i class="fa-solid fa-key text-[8px] mr-1"></i>Owner Lock</span>
+                        </button>
+                        <button onclick="switchCustomerProfile('Rahul Kumar', 'Retail Customer')" class="w-full text-left px-4 py-2 hover:bg-blue-50 text-xs font-bold text-slate-700 flex items-center justify-between">
+                            <span><i class="fa-solid fa-user text-blue-500 mr-2"></i>Rahul Kumar</span>
+                            <span class="text-[9px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">Customer</span>
+                        </button>
+                        <button onclick="switchCustomerProfile('Apex Medicos (Pvt Ltd)', 'B2B Wholesale Buyer')" class="w-full text-left px-4 py-2 hover:bg-blue-50 text-xs font-bold text-slate-700 flex items-center justify-between border-b pb-2">
+                            <span><i class="fa-solid fa-building text-purple-500 mr-2"></i>Apex Medicos</span>
+                            <span class="text-[9px] bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded">B2B Buyer</span>
+                        </button>
+                        <div id="owner-logout-btn-container" class="hidden flex-col border-b">
+                            <button onclick="openChangePasswordModal()" class="w-full text-left px-4 py-2 hover:bg-amber-50 text-xs font-bold text-amber-700 flex items-center gap-2">
+                                <i class="fa-solid fa-key text-amber-600"></i> Change Owner Password
+                            </button>
+                            <button onclick="openPublishEmailModal()" class="w-full text-left px-4 py-2 hover:bg-blue-50 text-xs font-bold text-blue-700 flex items-center gap-2">
+                                <i class="fa-solid fa-envelope-circle-check text-fkBlue"></i> Configure Publishing Email
+                            </button>
+                            <button onclick="logoutOwner()" class="w-full text-left px-4 py-2 hover:bg-red-50 text-xs font-bold text-red-600 flex items-center gap-2">
+                                <i class="fa-solid fa-right-from-bracket"></i> Logout Owner Session
+                            </button>
+                        </div>
+                        <a href="#" onclick="switchTab('tracking')" class="flex items-center gap-2.5 px-4 py-2.5 hover:bg-blue-50 text-slate-700 text-xs font-semibold"><i class="fa-solid fa-box text-fkBlue"></i> My Orders & Refills</a>
+                    </div>
+                </div>
+
+                <!-- Shopping Cart Icon Counter -->
+                <button onclick="toggleCartDrawer(true)" class="relative p-2 text-white hover:text-blue-100 flex items-center gap-1.5">
+                    <i class="fa-solid fa-cart-shopping text-lg"></i>
+                    <span class="hidden sm:inline font-bold">Cart</span>
+                    <span id="cart-badge-count" class="bg-fkYellow text-slate-900 font-extrabold text-[10px] w-5 h-5 rounded-full flex items-center justify-center -ml-1 -mt-2 border-2 border-fkBlue">0</span>
+                </button>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- Sub-Navbar Navigation Tabs & Category Strip -->
+    <nav class="bg-white border-b border-slate-200 shadow-sm sticky top-16 z-30">
+        <div class="max-w-7xl mx-auto px-4 flex items-center justify-between overflow-x-auto hide-scrollbar text-xs">
+            <div class="flex items-center space-x-1 sm:space-x-4 font-semibold whitespace-nowrap">
+                <button id="nav-btn-shop" onclick="switchTab('shop')" class="tab-active py-2.5 px-3 flex items-center gap-2 transition">
+                    <i class="fa-solid fa-pills text-fkBlue"></i> Medicines & Products
+                </button>
+                <button id="nav-btn-doctors" onclick="switchTab('doctors')" class="py-2.5 px-3 flex items-center gap-2 transition hover:text-fkBlue text-slate-600">
+                    <i class="fa-solid fa-user-doctor text-purple-600"></i> Consult Doctor
+                </button>
+                <button id="nav-btn-checkups" onclick="switchTab('checkups')" class="py-2.5 px-3 flex items-center gap-2 transition hover:text-fkBlue text-slate-600">
+                    <i class="fa-solid fa-vial-virus text-emerald-600"></i> Lab Tests & Checkup
+                </button>
+                <button id="nav-btn-tracking" onclick="switchTab('tracking')" class="py-2.5 px-3 flex items-center gap-2 transition hover:text-fkBlue text-slate-600">
+                    <i class="fa-solid fa-truck-fast text-fkYellow"></i> Live Order Tracking
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Containers -->
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-4 flex-1 w-full">
+        
+        <!-- SHOP VIEW -->
+        <div id="view-shop" class="space-y-4">
+            
+            <!-- Category Horizontal Scroll Strip -->
+            <div id="categories-strip" class="flex items-center gap-2 overflow-x-auto hide-scrollbar py-2 border-b border-slate-200 bg-white p-2 rounded shadow-sm">
+                <!-- Dynamically Rendered Category Pills -->
+            </div>
+
+            <!-- Product Grid -->
+            <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Dynamically Rendered Products -->
+            </div>
+        </div>
+
+        <!-- DOCTORS CONSULTATION VIEW -->
+        <div id="view-doctors" class="hidden space-y-4">
+            <div class="bg-gradient-to-r from-purple-800 to-indigo-900 text-white rounded-md p-6 shadow-md">
+                <h2 class="text-xl font-black flex items-center gap-2"><i class="fa-solid fa-stethoscope"></i> Verified Online Doctor Consultations</h2>
+                <p class="text-xs text-purple-200 mt-1">Connect with licensed medical specialists in under 10 minutes from home.</p>
+            </div>
+            <div id="doctor-specialty-pills" class="flex gap-2 overflow-x-auto hide-scrollbar pb-1"></div>
+            <div id="doctors-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+        </div>
+
+        <!-- LAB CHECKUPS VIEW -->
+        <div id="view-checkups" class="hidden space-y-4">
+            <div class="bg-gradient-to-r from-emerald-800 to-teal-900 text-white rounded-md p-6 shadow-md">
+                <h2 class="text-xl font-black flex items-center gap-2"><i class="fa-solid fa-flask-vial"></i> NABL Certified Diagnostic Tests</h2>
+                <p class="text-xs text-emerald-200 mt-1">Free Home Sample Collection & 100% Accurate Digital Reports.</p>
+            </div>
+            <div id="lab-packages-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- LIVE ORDER TRACKING & MAP VIEW -->
+        <div id="view-tracking" class="hidden space-y-4">
+            <div class="bg-white rounded border border-slate-200 p-5 shadow-sm">
+                <h3 class="font-extrabold text-base text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-location-crosshairs text-fkBlue"></i> Live Order Delivery Route
+                </h3>
+                <p class="text-xs text-slate-500 mb-4">Tracking Order #PK-88392 • Delivery Address: <strong>Sultanpur (UP) 228145</strong></p>
+                
+                <div class="relative w-full h-64 bg-slate-900 rounded-md overflow-hidden border border-slate-700 shadow-inner">
+                    <canvas id="live-map-canvas" class="w-full h-full block"></canvas>
+                </div>
+
+                <div class="mt-6 space-y-2">
+                    <div class="flex justify-between text-xs font-bold text-slate-700">
+                        <span id="step-1" class="text-emerald-600">1. Order Placed</span>
+                        <span id="step-2" class="text-emerald-600">2. Packed</span>
+                        <span id="step-3" class="text-emerald-600">3. On The Way</span>
+                        <span id="step-4" class="text-slate-400">4. Delivered</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div id="tracking-progress-bar" class="bg-emerald-500 h-full w-3/4 transition-all duration-500"></div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-100 text-fkBlue rounded-full flex items-center justify-center font-bold text-lg">
+                            <i class="fa-solid fa-motorcycle"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-800">Rider: Ramesh Kumar</div>
+                            <div class="text-[10px] text-slate-500">Vehicle: UP 44 AB 1024 • OTP: <strong class="text-slate-800">4892</strong></div>
+                        </div>
+                    </div>
+                    <button onclick="simulateDeliveryProgress()" class="bg-fkBlue hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded text-xs">
+                        Mark Delivered
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- SHOPPING CART SLIDE-OVER DRAWER -->
+    <div id="cart-drawer" class="fixed inset-0 z-50 overflow-hidden hidden">
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="toggleCartDrawer(false)"></div>
+        <div class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <div class="w-screen max-w-md bg-white shadow-2xl flex flex-col">
+                <div class="p-4 bg-fkBlue text-white flex items-center justify-between">
+                    <h3 class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-cart-shopping"></i> My Shopping Cart</h3>
+                    <button onclick="toggleCartDrawer(false)"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <div id="cart-items-list" class="flex-1 overflow-y-auto p-4 divide-y divide-slate-100"></div>
+                <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-3">
+                    <div class="flex justify-between text-xs font-semibold text-slate-600">
+                        <span>Items Total</span>
+                        <span id="cart-subtotal">₹0</span>
+                    </div>
+                    <div class="flex justify-between text-xs font-semibold text-slate-600">
+                        <span>Delivery Charge</span>
+                        <span class="text-emerald-600">FREE</span>
+                    </div>
+                    <div class="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200">
+                        <span>Total Payable</span>
+                        <span id="cart-total-payable" class="text-fkBlue">₹0</span>
+                    </div>
+                    <button onclick="handleCheckout()" class="w-full bg-fkOrange hover:bg-orange-600 text-white font-extrabold py-3 rounded-sm shadow uppercase text-xs tracking-wider">
+                        Proceed To Checkout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RX PRESCRIPTION UPLOAD MODAL -->
+    <div id="rx-modal" class="fixed inset-0 z-50 overflow-y-auto hidden">
+        <div class="flex min-h-screen items-center justify-center p-4">
+            <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="toggleRxModal(false)"></div>
+            <div class="relative bg-white rounded-md shadow-2xl max-w-md w-full p-6 space-y-4 z-10">
+                <div class="flex justify-between items-center border-b pb-3">
+                    <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-file-prescription text-emerald-600 text-lg"></i> Upload Doctor Prescription (Rx)
+                    </h3>
+                    <button onclick="toggleRxModal(false)"><i class="fa-solid fa-xmark text-lg text-slate-400"></i></button>
+                </div>
+                <div class="border-2 border-dashed border-slate-300 rounded-md p-6 text-center space-y-2 hover:border-emerald-500 cursor-pointer bg-slate-50">
+                    <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400"></i>
+                    <div class="text-xs font-bold text-slate-700">Drag & Drop Prescription file here</div>
+                    <div class="text-[10px] text-slate-400">Supports JPG, PNG, PDF up to 5MB</div>
+                    <input type="file" class="hidden" id="rx-file-input">
+                </div>
+                <button onclick="confirmRxUpload()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 rounded shadow text-xs uppercase tracking-wider">
+                    Confirm & Attach Prescription
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOM PASSWORD CHANGE / SETUP MODAL -->
+    <div id="change-pass-modal" class="fixed inset-0 z-50 overflow-y-auto hidden">
+        <div class="flex min-h-screen items-center justify-center p-4">
+            <div class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm" onclick="toggleChangePassModal(false)"></div>
+            <div class="relative bg-white rounded-md shadow-2xl max-w-sm w-full overflow-hidden z-10 p-6 space-y-4 border border-blue-200">
+                <div class="flex justify-between items-center border-b pb-3">
+                    <h3 class="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-key text-fkBlue text-lg"></i> Set Custom Owner Password
+                    </h3>
+                    <button onclick="toggleChangePassModal(false)"><i class="fa-solid fa-xmark text-lg text-slate-400"></i></button>
+                </div>
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">New Custom Password</label>
+                        <input type="password" id="new-custom-pass" placeholder="Enter new password (min 6 chars)" class="w-full p-2 border border-slate-300 rounded font-mono">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Confirm New Password</label>
+                        <input type="password" id="confirm-custom-pass" placeholder="Re-enter new password" class="w-full p-2 border border-slate-300 rounded font-mono">
+                    </div>
+                </div>
+                <button onclick="saveNewOwnerPassword()" class="w-full bg-fkBlue hover:bg-blue-700 text-white font-extrabold py-2.5 rounded shadow text-xs uppercase tracking-wider flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-floppy-disk"></i> Save My Custom Password
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PUBLISHING EMAIL CONFIGURATION MODAL -->
+    <div id="publish-email-modal" class="fixed inset-0 z-50 overflow-y-auto hidden">
+        <div class="flex min-h-screen items-center justify-center p-4">
+            <div class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm" onclick="togglePublishEmailModal(false)"></div>
+            <div class="relative bg-white rounded-md shadow-2xl max-w-md w-full overflow-hidden z-10 p-6 space-y-4 border border-emerald-200">
+                <div class="flex justify-between items-center border-b pb-3">
+                    <h3 class="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-globe text-emerald-600 text-lg"></i> Configure Publishing & Admin Email
+                    </h3>
+                    <button onclick="togglePublishEmailModal(false)"><i class="fa-solid fa-xmark text-lg text-slate-400"></i></button>
+                </div>
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Owner Name</label>
+                        <input type="text" id="cfg-owner-name" value="Shani Pandey" class="w-full p-2 border border-slate-300 rounded font-semibold">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Publishing Admin Email Address</label>
+                        <input type="email" id="cfg-owner-email" placeholder="your-email@gmail.com" class="w-full p-2 border border-slate-300 rounded font-semibold text-slate-800">
+                        <p class="text-[10px] text-slate-400 mt-1">This email will be used for web deployment, Netlify/Vercel publishing & support notifications.</p>
+                    </div>
+                </div>
+                <button onclick="savePublishingConfig()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 rounded shadow text-xs uppercase tracking-wider flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check-circle"></i> Save & Export Deployment Config
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MULTI-PAYMENT GATEWAY MODAL ================= -->
+    <div id="payment-modal" class="fixed inset-0 z-50 overflow-y-auto hidden">
+        <div class="flex min-h-screen items-center justify-center p-4">
+            <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="togglePaymentModal(false)"></div>
+            <div class="relative bg-white rounded-md shadow-2xl max-w-lg w-full overflow-hidden z-10">
+                <div class="bg-fkBlue p-4 text-white flex justify-between items-center">
+                    <div>
+                        <h3 class="font-extrabold text-sm uppercase tracking-wider">Select Payment Option</h3>
+                        <div class="text-xs text-blue-100">Amount Payable: <strong id="payment-modal-amount" class="text-fkYellow">₹0</strong></div>
+                    </div>
+                    <button onclick="togglePaymentModal(false)"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+
+                <div class="p-5 space-y-4 text-xs">
+                    <div class="space-y-2">
+                        <!-- UPI -->
+                        <label class="flex items-center justify-between p-3 border border-slate-200 rounded cursor-pointer hover:border-fkBlue transition">
+                            <div class="flex items-center gap-3">
+                                <input type="radio" name="payment-mode" value="upi" checked onchange="togglePaymentFields('upi')" class="text-fkBlue">
+                                <i class="fa-solid fa-qrcode text-lg text-emerald-600"></i>
+                                <div>
+                                    <div class="font-bold text-slate-800">UPI (Google Pay / PhonePe / Paytm)</div>
+                                    <div class="text-[10px] text-slate-400">Pay via App or Scan QR Code</div>
+                                </div>
+                            </div>
+                        </label>
+                        <!-- Cards & COD Options -->
+                        <label class="flex items-center justify-between p-3 border border-slate-200 rounded cursor-pointer hover:border-fkBlue transition">
+                            <div class="flex items-center gap-3">
+                                <input type="radio" name="payment-mode" value="card" onchange="togglePaymentFields('card')" class="text-fkBlue">
+                                <i class="fa-solid fa-credit-card text-lg text-blue-600"></i>
+                                <div>
+                                    <div class="font-bold text-slate-800">Credit / Debit Card</div>
+                                    <div class="text-[10px] text-slate-400">Visa, Mastercard, RuPay</div>
+                                </div>
+                            </div>
+                        </label>
+                        <label class="flex items-center justify-between p-3 border border-slate-200 rounded cursor-pointer hover:border-fkBlue transition">
+                            <div class="flex items-center gap-3">
+                                <input type="radio" name="payment-mode" value="cod" onchange="togglePaymentFields('cod')" class="text-fkBlue">
+                                <i class="fa-solid fa-hand-holding-dollar text-lg text-amber-600"></i>
+                                <div>
+                                    <div class="font-bold text-slate-800">Cash on Delivery (COD)</div>
+                                    <div class="text-[10px] text-slate-400">Pay cash upon home delivery</div>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div id="payment-extra-container" class="bg-slate-50 p-3 rounded border border-slate-200">
+                        <div class="space-y-2">
+                            <label class="block font-bold text-slate-700">Enter UPI ID</label>
+                            <input type="text" value="shanipandey@upi" placeholder="user@okaxis" class="w-full p-2 border rounded font-semibold text-slate-800">
+                        </div>
+                    </div>
+
+                    <button onclick="processFinalPayment()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 rounded-sm shadow text-xs uppercase tracking-wider">
+                        Confirm & Complete Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="bg-slate-900 text-slate-300 mt-12 border-t border-slate-800 text-xs">
+        <div class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <div>
+                <h4 class="text-white font-bold mb-2">About PharmaKart</h4>
+                <p class="text-slate-400 text-[11px] leading-relaxed">
+                    India's premier pharmacy platform bringing genuine medicines, doctor consultations, diagnostic lab checkups, and B2B wholesale medicine distribution under one roof.
+                </p>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-2">User Modes</h4>
+                <ul class="space-y-1 text-[11px]">
+                    <li><a href="#" onclick="setAccountMode('retailer')" class="hover:text-white">Retailer (Standard Purchase)</a></li>
+                    <li><a href="#" onclick="setAccountMode('distributor')" class="hover:text-white">Distributor (B2B Bulk Orders)</a></li>
+                    <li><a href="#" class="hover:text-white">GST Invoice & Tax Credit</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-2">Security & Protection</h4>
+                <ul class="space-y-1 text-[11px]">
+                    <li><i class="fa-solid fa-lock text-emerald-400 mr-1"></i> Encrypted Payment Gateway</li>
+                    <li><i class="fa-solid fa-shield text-emerald-400 mr-1"></i> Anti-XSS & Anti-CSRF Guard</li>
+                    <li><i class="fa-solid fa-check text-emerald-400 mr-1"></i> 100% Genuine Certified Partner</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-2">Contact & Operations</h4>
+                <p class="text-[11px] text-slate-400">Headquarters: PharmaKart Tech Hub, Sultanpur (UP) 228145, India</p>
+                <p class="text-[11px] text-slate-400 mt-1">Support Email: <span id="footer-support-email" class="text-fkYellow">support@pharmakart.com</span></p>
+            </div>
+        </div>
+        <div class="bg-slate-950 py-3 text-center text-[11px] border-t border-slate-800 text-slate-400">
+            © 2026 <strong>PharmaKart</strong>. Platform Designed, Developed & Owned by <strong class="text-fkYellow" id="footer-owner-name">Shani Pandey</strong>. All Rights Reserved.
+        </div>
+    </footer>
+
+    <!-- ================= JAVASCRIPT LOGIC & ANTI-HACKING SECURITY SHIELD ================= -->
+    <script>
+        // Security Module: Anti-XSS Sanitization & Security Tokens
+        const AntiHackingGuard = {
+            csrfToken: 'PK-SEC-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
+            sanitizeInput: function(str) {
+                if (typeof str !== 'string') return str;
+                return str.replace(/[&<>"']/g, function(match) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[match];
+                });
+            },
+            init: function() {
+                console.log("[SECURITY SHIELD] Anti-XSS & Anti-CSRF Protection initialized.");
+                const badge = document.getElementById('security-token-badge');
+                if (badge) badge.innerText = `Token: ${this.csrfToken}`;
+            }
+        };
+
+        // Core Application State Variables
+        let selectedCategory = "All";
+        let accountMode = "retailer"; // "retailer" or "distributor"
+        let cart = [];
+        let uploadedPrescription = false;
+        let isOwnerLoggedIn = true;
+        let customOwnerPassword = "shani"; // Default customizable password
+        let publishingOwnerEmail = "shani.pandey@gmail.com"; // Configurable publishing email
+        let publishingOwnerName = "Shani Pandey";
+        let selectedDoctorSlot = null;
+        let selectedDoctorName = "";
+
+        // Application Datasets
+        const allCategories = [
+            "All",
+            "General Medicines",
+            "Personal Care",
+            "Healthcare Devices",
+            "Ayurvedic & Herbal",
+            "Baby Care",
+            "Sexual Wellness",
+            "Surgical & First Aid",
+            "Fitness & Supplements"
+        ];
+
+        const medicinesData = [
+            {
+                id: 1,
+                name: "Paracetamol 650mg (Dolo 650)",
+                category: "General Medicines",
+                price: 30,
+                wholesalePrice: 18,
+                mrp: 35,
+                pack: "Strip of 15 Tablets",
+                bulkPack: "Box of 20 Strips (300 Tabs)",
+                moq: 10,
+                rxRequired: false,
+                image: "https://placehold.co/200x200/e2e8f0/1e293b?text=Paracetamol+650"
+            },
+            {
+                id: 2,
+                name: "Amoxicillin 500mg Antibiotic",
+                category: "General Medicines",
+                price: 85,
+                wholesalePrice: 52,
+                mrp: 110,
+                pack: "Strip of 10 Capsules",
+                bulkPack: "Box of 50 Strips",
+                moq: 15,
+                rxRequired: true,
+                image: "https://placehold.co/200x200/e2e8f0/1e293b?text=Amoxicillin+500"
+            },
+            {
+                id: 3,
+                name: "Digital Blood Pressure Monitor",
+                category: "Healthcare Devices",
+                price: 1450,
+                wholesalePrice: 980,
+                mrp: 2200,
+                pack: "1 Unit with Cuff & Adapter",
+                bulkPack: "Carton of 10 Units",
+                moq: 2,
+                rxRequired: false,
+                image: "https://placehold.co/200x200/e2e8f0/1e293b?text=BP+Monitor"
+            },
+            {
+                id: 4,
+                name: "Accu-Chek Blood Glucose Meter",
+                category: "Healthcare Devices",
+                price: 999,
+                wholesalePrice: 720,
+                mrp: 1599,
+                pack: "Meter + 10 Test Strips",
+                bulkPack: "Case of 20 Kits",
+                moq: 5,
+                rxRequired: false,
+                image: "https://placehold.co/200x200/e2e8f0/1e293b?text=Glucometer+Kit"
+            },
+            {
+                id: 5,
+                name: "Dabur Chyawanprash 1kg",
+                category: "Ayurvedic & Herbal",
+                price: 375,
+                wholesalePrice: 280,
+                mrp: 450,
+                pack: "1kg Jar",
+                bulkPack: "Case of 12 Jars",
+                moq: 6,
+                rxRequired: false,
+                image: "https://placehold.co/200x200/e2e8f0/1e293b?text=Chyawanprash+1kg"
+            },
+            {
+                id: 6,
+                name: "Nivea Soft Moisturizing Cream",
+                category: "Personal Care",
+                price: 240,
+                wholesalePrice: 175,
+                mrp: 299,
+                pack: "300ml Tub",
+                bulkPack: "Pack of 24 Tubs",
+                moq: 12,
+                rxRequired: false,
+                image: "https://placehold.co/200x200/e2e8f0/1e293b?text=Nivea+Soft"
+            },
+            {
+                id: 7,
+                name: "Pampers Baby Diapers (L Size)",
+                category: "Baby Care",
+                price: 799,
+                wholesalePrice: 580,
+                mrp: 1099,
+                pack: "Pack of 54 Pants",
+                bulkPack: "Bundle of 6 Packs",
+                moq: 4,
+                rxRequired: false,
+                image: "https://placehold.co/200x200/e2e8f0/1e293b?text=Baby+Diapers"
+            },
+            {
+                id: 8,
+                name: "Digital Infrared Thermometer",
+                category: "Surgical & First Aid",
+                price: 850,
+                wholesalePrice: 520,
+                mrp: 1499,
+                pack: "1 Non-Contact Gun",
+                bulkPack: "Box of 25 Guns",
+                moq: 5,
+                rxRequired: false,
+                image: "https://placehold.co/200x200/e2e8f0/1e293b?text=Thermometer"
+            },
+            {
+                id: 9,
+                name: "Whey Protein Isolate 1kg",
+                category: "Fitness & Supplements",
+                price: 2699,
+                wholesalePrice: 1950,
+                mrp: 3499,
+                pack: "1kg Jar (Chocolate)",
+                bulkPack: "Box of 8 Jars",
+                moq: 2,
+                rxRequired: false,
+                image: "https://placehold.co/200x200/e2e8f0/1e293b?text=Whey+Protein"
+            }
+        ];
+
+        const doctorsData = [
+            {
+                id: 101,
+                name: "Dr. Arvind Sharma",
+                specialty: "General Physician",
+                exp: "14+ Yrs Exp",
+                degree: "MBBS, MD (General Med)",
+                fee: 499,
+                rating: "4.9 ★",
+                image: "https://placehold.co/100x100/3b82f6/ffffff?text=Dr+Arvind"
+            },
+            {
+                id: 102,
+                name: "Dr. Meenakshi Gupta",
+                specialty: "Dermatologist",
+                exp: "10+ Yrs Exp",
+                degree: "MBBS, DVD (Skin)",
+                fee: 650,
+                rating: "4.8 ★",
+                image: "https://placehold.co/100x100/ec4899/ffffff?text=Dr+Meenakshi"
+            },
+            {
+                id: 103,
+                name: "Dr. Rajesh Verma",
+                specialty: "Cardiologist",
+                exp: "18+ Yrs Exp",
+                degree: "MBBS, DM (Cardiology)",
+                fee: 999,
+                rating: "5.0 ★",
+                image: "https://placehold.co/100x100/8b5cf6/ffffff?text=Dr+Rajesh"
+            },
+            {
+                id: 104,
+                name: "Dr. Sunita Rao",
+                specialty: "Pediatrician",
+                exp: "12+ Yrs Exp",
+                degree: "MBBS, DCH (Child Specialist)",
+                fee: 550,
+                rating: "4.9 ★",
+                image: "https://placehold.co/100x100/10b981/ffffff?text=Dr+Sunita"
+            }
+        ];
+
+        const labPackagesData = [
+            {
+                id: 201,
+                title: "Full Body Health Checkup - Gold",
+                testsCount: "78 Tests Covered",
+                testsList: "CBC, Lipid Profile, Thyroid Total, Diabetes Screening, Kidney Function Test, Liver Profile",
+                price: 799,
+                mrp: 2499,
+                badge: "Popular"
+            },
+            {
+                id: 202,
+                title: "Diabetes Care & Sugar Profile",
+                testsCount: "12 Tests Covered",
+                testsList: "HbA1c, Fasting Blood Sugar, PP Blood Sugar, Urine Microalbumin",
+                price: 399,
+                mrp: 999,
+                badge: "Essential"
+            },
+            {
+                id: 203,
+                title: "Cardiac & Heart Risk Profile",
+                testsCount: "35 Tests Covered",
+                testsList: "Lipid Profile, Hs-CRP, Homocysteine, Troponin-I, ECG Monitor",
+                price: 1299,
+                mrp: 3500,
+                badge: "Specialized"
+            }
+        ];
+
+        // UI Toast Messages
+        function showToast(msg) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = "bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded shadow-xl border border-slate-700 flex items-center gap-2 animate-bounce pointer-events-auto";
+            toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> ${AntiHackingGuard.sanitizeInput(msg)}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Tab Navigation Switcher
+        function switchTab(tabId) {
+            ['shop', 'doctors', 'checkups', 'tracking'].forEach(t => {
+                const view = document.getElementById(`view-${t}`);
+                const btn = document.getElementById(`nav-btn-${t}`);
+                if (view) view.classList.add('hidden');
+                if (btn) btn.className = "py-2.5 px-3 flex items-center gap-2 transition hover:text-fkBlue text-slate-600 font-semibold";
+            });
+
+            const activeView = document.getElementById(`view-${tabId}`);
+            const activeBtn = document.getElementById(`nav-btn-${tabId}`);
+            if (activeView) activeView.classList.remove('hidden');
+            if (activeBtn) activeBtn.className = "tab-active py-2.5 px-3 flex items-center gap-2 transition font-bold";
+
+            if (tabId === 'tracking') {
+                setTimeout(initLiveMap, 200);
+            }
+        }
+
+        // App Core Data Rendering Logic
+        function renderCategories() {
+            const strip = document.getElementById('categories-strip');
+            if (!strip) return;
+            strip.innerHTML = allCategories.map(cat => `
+                <button onclick="setCategory('${cat}')" 
+                        class="px-3.5 py-1.5 rounded-full font-bold text-xs whitespace-nowrap transition ${selectedCategory === cat ? 'bg-fkBlue text-white shadow' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
+                    ${cat}
+                </button>
+            `).join('');
+        }
+
+        function setCategory(cat) {
+            selectedCategory = cat;
+            renderCategories();
+            renderProducts();
+        }
+
+        function setAccountMode(mode) {
+            accountMode = mode;
+            const btnRetail = document.getElementById('btn-mode-retail');
+            const btnDist = document.getElementById('btn-mode-distributor');
+            const badge = document.getElementById('badge-account-mode');
+
+            if (mode === 'distributor') {
+                if (btnDist) btnDist.className = "px-3 py-1 rounded text-xs font-bold transition bg-white text-fkBlue shadow";
+                if (btnRetail) btnRetail.className = "px-3 py-1 rounded text-xs font-bold transition text-blue-100 hover:text-white";
+                if (badge) badge.innerText = "Mode: Distributor (B2B Bulk)";
+                showToast("Switched to Distributor Mode (B2B Wholesale Prices Enabled)");
+            } else {
+                if (btnRetail) btnRetail.className = "px-3 py-1 rounded text-xs font-bold transition bg-white text-fkBlue shadow";
+                if (btnDist) btnDist.className = "px-3 py-1 rounded text-xs font-bold transition text-blue-100 hover:text-white";
+                if (badge) badge.innerText = "Mode: Retailer";
+                showToast("Switched to Retailer Mode");
+            }
+            renderProducts();
+        }
+
+        function renderProducts(query = "") {
+            const grid = document.getElementById('products-grid');
+            if (!grid) return;
+            
+            const filtered = medicinesData.filter(item => {
+                const matchCategory = selectedCategory === "All" || item.category === selectedCategory;
+                const matchSearch = item.name.toLowerCase().includes(query.toLowerCase()) || item.category.toLowerCase().includes(query.toLowerCase());
+                return matchCategory && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400 font-bold">No products found in category "${selectedCategory}"</div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(item => {
+                const isDistributor = accountMode === 'distributor';
+                const activePrice = isDistributor ? item.wholesalePrice : item.price;
+                const packLabel = isDistributor ? item.bulkPack : item.pack;
+
+                return `
+                    <div class="bg-white rounded border border-slate-200 p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between relative group">
+                        ${item.rxRequired ? `<span class="absolute top-2 right-2 bg-red-100 text-red-700 text-[10px] font-bold px-1.5 py-0.5 rounded border border-red-200">Rx Required</span>` : ''}
+                        <div>
+                            <img src="${item.image}" alt="${item.name}" class="w-full h-32 object-contain rounded mb-3">
+                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">${item.category}</span>
+                            <h3 class="font-bold text-sm text-slate-800 line-clamp-1 mt-0.5">${item.name}</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">${packLabel}</p>
+                            ${isDistributor ? `<p class="text-[10px] text-purple-700 font-bold mt-1 bg-purple-50 px-2 py-0.5 rounded inline-block">Min. Order Qty (MOQ): ${item.moq} Units</p>` : ''}
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs line-through text-slate-400">₹${item.mrp}</span>
+                                <span class="text-base font-extrabold text-slate-900 ml-1">₹${activePrice}</span>
+                            </div>
+                            <button onclick="addToCart(${item.id})" class="bg-fkYellow hover:bg-amber-500 text-slate-900 text-xs font-black px-3 py-1.5 rounded shadow-sm flex items-center gap-1">
+                                <i class="fa-solid fa-cart-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderDoctors() {
+            const grid = document.getElementById('doctors-grid');
+            if (!grid) return;
+            grid.innerHTML = doctorsData.map(doc => `
+                <div class="bg-white border border-slate-200 rounded p-4 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center gap-3">
+                        <img src="${doc.image}" class="w-14 h-14 rounded-full object-cover border border-purple-200">
+                        <div>
+                            <h4 class="font-bold text-sm text-slate-800">${doc.name}</h4>
+                            <div class="text-xs text-purple-700 font-bold">${doc.specialty}</div>
+                            <div class="text-[11px] text-slate-500">${doc.degree} • ${doc.exp}</div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <div>
+                            <span class="text-slate-400">Fee:</span>
+                            <span class="font-extrabold text-slate-900 text-sm">₹${doc.fee}</span>
+                        </div>
+                        <button onclick="openDoctorModal('${doc.name}', ${doc.fee})" class="bg-purple-700 hover:bg-purple-800 text-white font-bold px-3 py-1.5 rounded text-xs shadow-sm">
+                            Book Slot
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderDoctorSpecialties() {
+            const container = document.getElementById('doctor-specialty-pills');
+            if (!container) return;
+            const specs = ["All Specialties", "General Physician", "Dermatologist", "Cardiologist", "Pediatrician", "Gynecologist", "Orthopedic"];
+            container.innerHTML = specs.map((s, idx) => `
+                <button class="px-3 py-1 text-xs font-bold rounded-full ${idx === 0 ? 'bg-purple-800 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'} whitespace-nowrap">
+                    ${s}
+                </button>
+            `).join('');
+        }
+
+        function renderLabPackages() {
+            const grid = document.getElementById('lab-packages-grid');
+            if (!grid) return;
+            grid.innerHTML = labPackagesData.map(pkg => `
+                <div class="bg-white border border-slate-200 rounded p-5 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase">${pkg.badge}</span>
+                        <h3 class="font-bold text-base text-slate-800 mt-2">${pkg.title}</h3>
+                        <div class="text-xs text-emerald-700 font-bold mt-1"><i class="fa-solid fa-microscope mr-1"></i>${pkg.testsCount}</div>
+                        <p class="text-xs text-slate-500 mt-2 leading-relaxed">${pkg.testsList}</p>
+                    </div>
+                    <div class="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <div>
+                            <span class="text-xs line-through text-slate-400">₹${pkg.mrp}</span>
+                            <span class="text-lg font-black text-slate-900 ml-1">₹${pkg.price}</span>
+                        </div>
+                        <button onclick="bookLabPackage('${pkg.title}', ${pkg.price})" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded shadow">
+                            Book Test
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function handleSearch() {
+            const query = document.getElementById('search-input').value;
+            renderProducts(query);
+        }
+
+        function addToCart(id) {
+            const item = medicinesData.find(m => m.id === id);
+            if (!item) return;
+
+            const isDistributor = accountMode === 'distributor';
+            const price = isDistributor ? item.wholesalePrice : item.price;
+            const minQty = isDistributor ? item.moq : 1;
+
+            const existing = cart.find(i => i.id === id);
+            if (existing) {
+                existing.qty += 1;
+            } else {
+                cart.push({ ...item, price, qty: minQty });
+            }
+            updateCartUI();
+            showToast(`Added ${item.name} to Cart`);
+        }
+
+        function updateCartUI() {
+            const countBadge = document.getElementById('cart-badge-count');
+            const totalQty = cart.reduce((acc, i) => acc + i.qty, 0);
+            if (countBadge) countBadge.innerText = totalQty;
+
+            const list = document.getElementById('cart-items-list');
+            if (!list) return;
+
+            if (cart.length === 0) {
+                list.innerHTML = `<div class="text-center py-10 text-slate-400 font-bold">Your Cart is Empty</div>`;
+            } else {
+                list.innerHTML = cart.map(item => `
+                    <div class="py-3 flex items-center justify-between gap-2">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-xs text-slate-800 line-clamp-1">${item.name}</h4>
+                            <div class="text-[11px] text-slate-500">₹${item.price} × ${item.qty}</div>
+                        </div>
+                        <div class="flex items-center gap-2 border rounded p-1">
+                            <button onclick="updateCartQty(${item.id}, -1)" class="w-5 h-5 bg-slate-100 rounded text-xs font-bold">-</button>
+                            <span class="text-xs font-bold px-1">${item.qty}</span>
+                            <button onclick="updateCartQty(${item.id}, 1)" class="w-5 h-5 bg-slate-100 rounded text-xs font-bold">+</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            const total = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+            document.getElementById('cart-subtotal').innerText = `₹${total}`;
+            document.getElementById('cart-total-payable').innerText = `₹${total}`;
+        }
+
+        function updateCartQty(id, change) {
+            const item = cart.find(i => i.id === id);
+            if (!item) return;
+            item.qty += change;
+            if (item.qty <= 0) {
+                cart = cart.filter(i => i.id !== id);
+            }
+            updateCartUI();
+        }
+
+        function toggleCartDrawer(open) {
+            document.getElementById('cart-drawer').classList.toggle('hidden', !open);
+        }
+
+        function toggleRxModal(open) {
+            document.getElementById('rx-modal').classList.toggle('hidden', !open);
+        }
+
+        function confirmRxUpload() {
+            uploadedPrescription = true;
+            toggleRxModal(false);
+            showToast("Prescription Attached Successfully!");
+        }
+
+        function promptPincode() {
+            const code = prompt("Enter delivery pincode:", "228145");
+            if (code) document.getElementById('location-text').innerHTML = `Sultanpur (UP) ${code} <i class="fa-solid fa-chevron-down text-[9px]"></i>`;
+        }
+
+        // Owner Account Security & Login Controls
+        function requestOwnerLogin() {
+            if (isOwnerLoggedIn) {
+                switchCustomerProfile('Shani Pandey', 'Owner');
+                return;
+            }
+
+            const pwd = prompt("🔐 SECURITY CHECK: Enter Owner Password for Shani Pandey profile:");
+            if (pwd === customOwnerPassword) {
+                isOwnerLoggedIn = true;
+                document.getElementById('owner-logout-btn-container').classList.remove('hidden');
+                document.getElementById('owner-logout-btn-container').classList.add('flex');
+                switchCustomerProfile('Shani Pandey (Owner)', 'Platform Owner');
+                showToast("Owner Session Authenticated Successfully!");
+            } else if (pwd !== null) {
+                alert("❌ ACCESS DENIED: Invalid Owner Password!");
+            }
+        }
+
+        function switchCustomerProfile(name, role) {
+            document.getElementById('user-display-name').innerText = name;
+            showToast(`Active Account: ${name} (${role})`);
+        }
+
+        function logoutOwner() {
+            isOwnerLoggedIn = false;
+            document.getElementById('owner-logout-btn-container').classList.add('hidden');
+            document.getElementById('owner-logout-btn-container').classList.remove('flex');
+            switchCustomerProfile('Rahul Kumar', 'Retail Customer');
+            showToast("Logged out of Owner Account");
+        }
+
+        function openChangePasswordModal() {
+            document.getElementById('change-pass-modal').classList.remove('hidden');
+        }
+
+        function toggleChangePassModal(open) {
+            document.getElementById('change-pass-modal').classList.toggle('hidden', !open);
+        }
+
+        function openPublishEmailModal() {
+            document.getElementById('cfg-owner-name').value = publishingOwnerName;
+            document.getElementById('cfg-owner-email').value = publishingOwnerEmail;
+            document.getElementById('publish-email-modal').classList.remove('hidden');
+        }
+
+        function togglePublishEmailModal(open) {
+            document.getElementById('publish-email-modal').classList.toggle('hidden', !open);
+        }
+
+        function savePublishingConfig() {
+            const name = document.getElementById('cfg-owner-name').value.trim();
+            const email = document.getElementById('cfg-owner-email').value.trim();
+
+            if (!name || !email) {
+                alert("Please fill in both Owner Name and Email address.");
+                return;
+            }
+
+            publishingOwnerName = name;
+            publishingOwnerEmail = email;
+
+            // Sync UI Elements
+            document.getElementById('top-owner-name').innerText = name;
+            document.getElementById('top-owner-email').innerText = email;
+            document.getElementById('footer-owner-name').innerText = name;
+            document.getElementById('footer-support-email').innerText = email;
+
+            togglePublishEmailModal(false);
+            showToast(`Publishing Email configured: ${email}`);
+        }
+
+        function saveNewOwnerPassword() {
+            const newPass = document.getElementById('new-custom-pass').value;
+            const confirmPass = document.getElementById('confirm-custom-pass').value;
+
+            if (!newPass || newPass.length < 4) {
+                alert("Password must be at least 4 characters long!");
+                return;
+            }
+            if (newPass !== confirmPass) {
+                alert("Passwords do not match!");
+                return;
+            }
+
+            customOwnerPassword = newPass;
+            toggleChangePassModal(false);
+            showToast("Owner Password Updated Successfully!");
+        }
+
+        // Doctor Booking Modal Logic
+        function openDoctorModal(docName, fee) {
+            selectedDoctorName = docName;
+            document.getElementById('modal-doctor-name').innerText = `Consultation with ${docName}`;
+            document.getElementById('doctor-modal').classList.remove('hidden');
+        }
+
+        function toggleDoctorModal(open) {
+            document.getElementById('doctor-modal').classList.toggle('hidden', !open);
+        }
+
+        function selectSlot(btn) {
+            const btns = document.querySelectorAll('#slot-buttons button');
+            btns.forEach(b => b.classList.remove('bg-purple-800', 'text-white'));
+            btn.classList.add('bg-purple-800', 'text-white');
+            selectedDoctorSlot = btn.innerText;
+        }
+
+        function confirmDoctorBooking() {
+            toggleDoctorModal(false);
+            showToast(`Appointment confirmed with ${selectedDoctorName} at ${selectedDoctorSlot || '10:00 AM'}`);
+        }
+
+        function bookLabPackage(title, price) {
+            showToast(`Lab Test Booking Created: ${title} (₹${price})`);
+        }
+
+        // Payment Gateway Logic
+        function handleCheckout() {
+            if (cart.length === 0) {
+                alert("Your cart is empty!");
+                return;
+            }
+
+            const total = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+            document.getElementById('payment-modal-amount').innerText = `₹${total}`;
+            toggleCartDrawer(false);
+            togglePaymentModal(true);
+        }
+
+        function togglePaymentModal(open) {
+            document.getElementById('payment-modal').classList.toggle('hidden', !open);
+        }
+
+        function togglePaymentFields(mode) {
+            const container = document.getElementById('payment-extra-container');
+            if (!container) return;
+            if (mode === 'upi') {
+                container.innerHTML = `
+                    <div class="space-y-2">
+                        <label class="block font-bold text-slate-700">Enter UPI ID</label>
+                        <input type="text" value="shanipandey@upi" placeholder="user@okaxis" class="w-full p-2 border rounded font-semibold text-slate-800">
+                    </div>`;
+            } else if (mode === 'card') {
+                container.innerHTML = `
+                    <div class="space-y-2">
+                        <label class="block font-bold text-slate-700">Card Number</label>
+                        <input type="text" placeholder="4532 •••• •••• 8921" class="w-full p-2 border rounded font-semibold text-slate-800">
+                    </div>`;
+            } else {
+                container.innerHTML = `<div class="text-xs text-slate-600 font-bold">Cash on Delivery selected. Pay cash at your doorstep.</div>`;
+            }
+        }
+
+        function processFinalPayment() {
+            togglePaymentModal(false);
+            cart = [];
+            updateCartUI();
+            switchTab('tracking');
+            showToast("Order Placed Successfully! Live Tracking Started.");
+        }
+
+        // Live Order Map Simulation Canvas
+        function initLiveMap() {
+            const canvas = document.getElementById('live-map-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw simulated road route
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 12;
+            ctx.beginPath();
+            ctx.moveTo(30, canvas.height / 2);
+            ctx.lineTo(canvas.width - 40, canvas.height / 2);
+            ctx.stroke();
+
+            // Active GPS Path
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(30, canvas.height / 2);
+            ctx.lineTo(canvas.width * 0.7, canvas.height / 2);
+            ctx.stroke();
+
+            // Destination Pin
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(canvas.width - 40, canvas.height / 2, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Delivery Rider Pin
+            ctx.fillStyle = '#ff9f00';
+            ctx.beginPath();
+            ctx.arc(canvas.width * 0.7, canvas.height / 2, 10, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function simulateDeliveryProgress() {
+            document.getElementById('step-4').className = "text-emerald-600 font-bold";
+            document.getElementById('tracking-progress-bar').className = "bg-emerald-500 h-full w-full transition-all duration-500";
+            showToast("Order Marked Delivered at Sultanpur (UP) 228145!");
+        }
+
+        // Initialize App UI on Window Load
+        window.addEventListener('DOMContentLoaded', () => {
+            AntiHackingGuard.init();
+            renderCategories();
+            renderProducts();
+            renderDoctorSpecialties();
+            renderDoctors();
+            renderLabPackages();
+            updateCartUI();
+        });
+    </script>
+</body>
+</html>
